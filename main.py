@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Response, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from libs.config_loader import settings
 from libs.auth import ygg_meta, ygg_auth, ygg_seesion
 from libs.skin import create_csl_data
@@ -12,6 +13,14 @@ from pathlib import Path
 import uvicorn
 
 app=FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 security = HTTPBearer()
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
