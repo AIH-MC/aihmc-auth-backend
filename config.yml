@@ -1,0 +1,82 @@
+# 密钥配置
+rsakey:
+  public_keyfile: "./keys/public.key"
+  private_keyfile: "./keys/private.pem"
+
+# 验证服务器设置
+auth_servers:
+  - id: "mojang"
+    url: "https://sessionserver.mojang.com/session/minecraft/hasJoined"
+    enabled: true
+  - id: "aihmc"
+    url: "https://api.aihmc.top/mcauth/sessionserver/session/minecraft/hasJoined" 
+    enabled: true
+  - id: "littleskin"
+    url: "https://littleskin.cn/api/yggdrasil/sessionserver/session/minecraft/hasJoined" 
+    enabled: true
+  - id: "elyby"
+    url: "https://account.ely.by/api/minecraft/session/hasJoined" 
+    enabled: true
+
+# 玩家名存在性验证
+user_check:
+  - id: "mojang"
+    name: "Offical"
+    url: "https://api.mojang.com/users/profiles/minecraft"
+    profile_url: "https://sessionserver.mojang.com/session/minecraft/profile"
+    enabled: true
+  - id: "aihmc"
+    name: "AIH-MC"
+    url: "https://api.aihmc.top/mcauth/api/users/profiles/minecraft" 
+    profile_url: "https://api.aihmc.top/mcauth/sessionserver/session/minecraft/profile"
+    enabled: true
+  - id: "littleskin"
+    name: "LittleSkin"
+    url: "https://littleskin.cn/api/yggdrasil/api/users/profiles/minecraft"
+    profile_url: "https://littleskin.cn/api/yggdrasil/sessionserver/session/minecraft/profile"
+    enabled: true
+  - id: "elyby"
+    name: "Ely.by"
+    url: "https://authserver.ely.by/api/users/profiles/minecraft"
+    profile_url: "https://account.ely.by/api/minecraft/session/profile"
+    enabled: true
+
+# 皮肤 API设置
+skin_apis:
+  - id: "mojang"
+    type: "official"
+    url: "https://minecraft.net"
+    enabled: true
+  - id: "aihmc"
+    type: "csl"
+    url: "https://skin.aihmc.top"
+    enabled: true
+  - id: "littleskin"
+    type: "csl"
+    url: "https://littleskin.cn"
+    enabled: true
+  - id: "elyby"
+    type: "elyby"
+    url: "https://ely.by"
+    enabled: true
+
+# 数据库设置
+database:
+  host: "127.0.0.1" 
+  port: 3306
+  user: "root"
+  password: ""
+  db_name: "aihmc_auth"
+
+#服务端设置
+server:
+  host: "0.0.0.0"
+  port: 8002
+  debug: false
+  timeout: 5.0
+
+# 允许离线登录验证
+allow_offline: true
+
+# 访问令牌
+access_token: ""
