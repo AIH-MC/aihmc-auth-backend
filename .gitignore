@@ -1,0 +1,13 @@
+# 忽略 RSA 密钥文件
+keys/private.pem
+keys/public.key
+
+# 忽略 Python 缓存和环境
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# 忽略皮肤缓存
+textures/*
+!textures/.keep
