@@ -1,5 +1,7 @@
 from libs.config_loader import settings
 from libs.database import Database
+from urllib.parse import urlparse
+import tldextract
 import httpx
 
 db = Database()
@@ -44,21 +46,35 @@ async def link_server_profile(uuid, new_uuid):
         
 # 用户名存在性检测
 async def check_player_name(username):
-    for user_api in settings.user_check:
-        current_id = user_api.get("id")
-        url = user_api.get("url")
+    for user_api in settings.servers:
         current_name = user_api.get("name")
+        current_type = user_api.get("api_type")
+        current_url = user_api.get("root_url")
+        extracted = tldextract.extract(current_url)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
+        protocol = urlparse(current_url).scheme
+        
+        full_url= ""
         
         enabled = user_api.get("enabled", True)
         if not enabled:
-            print(f"❌ 已关闭 {current_id} 来源的用户存在性验证。正在尝试下一个...")
+            print(f"❌ 已关闭 {current_name} 来源的用户存在性验证。正在尝试下一个...")
             continue
+        
+        if current_type == "mojang":
+            full_url = f"{protocol}://api.{root_domain}/users/profiles/minecraft"
+        elif current_type == "aihmc":
+            full_url = f"{protocol}://api.{root_domain}/mcauth/api/users/profiles/minecraft"
+        elif current_type == "blessingskin":
+            full_url = f"{protocol}://{root_domain}/api/yggdrasil/api/users/profiles/minecraft"
+        elif current_type == "elyby":
+            full_url = f"{protocol}://authserver.{root_domain}/api/users/profiles/minecraft"
 
-        respdata = await send_data(f"{url}/{username}")
+        respdata = await send_data(f"{full_url}/{username}")
         
         if respdata:
             respdata["source"] = current_name
-            print(f"❌ 玩家名 {username} 已存在于途径 {current_id}")
+            print(f"❌ 玩家名 {username} 已存在于途径 {current_name}")
             return respdata
         
     print(f"⚠️ 玩家名 {username} 可用")

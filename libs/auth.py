@@ -1,6 +1,7 @@
 from libs.config_loader import settings
 from pathlib import Path
 from libs.database import Database
+from urllib.parse import urlparse
 import tldextract
 import httpx
 import random
@@ -119,15 +120,18 @@ async def get_ygg_profile(url, uuid):
 
 async def ygg_meta():
     key_content = Path(settings.keys["public_keyfile"]).read_text(encoding="utf-8")
-    skin_urls = []
-    for skin_apis in settings.skin_apis:
-       skin_url = skin_apis.get('url')
-       extracted = tldextract.extract(skin_url)
-       root_domain = f"{extracted.domain}.{extracted.suffix}"
-       root_domain_with_dot = f".{root_domain}"
-       skin_urls.append(root_domain_with_dot)
-       skin_urls.append(root_domain)
-    
+    extra_urls = settings.extra_skin_domains
+    skin_urls = [] + extra_urls
+    for skin_apis in settings.servers:
+        if not skin_apis.get('enabled'):
+            continue
+        skin_url = skin_apis.get('root_url')
+        extracted = tldextract.extract(skin_url)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
+        root_domain_with_dot = f".{root_domain}"
+        skin_urls.append(root_domain_with_dot)
+        skin_urls.append(root_domain)
+        
     final_meta_data = {
         "meta": {
             "implementationName": "aihmc-auth-server",
@@ -140,42 +144,70 @@ async def ygg_meta():
     return final_meta_data
 
 async def ygg_auth(username, serverid, ip):
-    for auth_api in settings.auth_servers:
-        current_id = auth_api.get("id") 
+    for auth_api in settings.servers:
+        current_name = auth_api.get("name")
+        current_type = auth_api.get("api_type")
+        current_url = auth_api.get("root_url")
+        extracted = tldextract.extract(current_url)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
+        protocol = urlparse(current_url).scheme
+        
+        full_url= ""
         
         enabled = auth_api.get("enabled", True)
         if not enabled:
-            print(f"❌ 玩家 {username} 通过途径 {current_id} 验证失败，原因：已关闭。正在尝试下一个...")
+            print(f"❌ 玩家 {username} 通过途径 {current_name} 验证失败，原因：已关闭。正在尝试下一个...")
             continue
-        
-        respdata = await get_ygg_data(auth_api.get("url"), username, serverid, ip)
+        if current_type == "mojang":
+            full_url = f"{protocol}://sessionserver.{root_domain}/session/minecraft/hasJoined"
+        elif current_type == "aihmc":
+            full_url = f"{protocol}://api.{root_domain}/mcauth/sessionserver/session/minecraft/hasJoined"
+        elif current_type == "blessingskin":
+            full_url = f"{protocol}://{root_domain}/api/yggdrasil/sessionserver/session/minecraft/hasJoined"
+        elif current_type == "elyby":
+            full_url = f"{protocol}://account.{root_domain}/api/minecraft/session/hasJoined"
+        respdata = await get_ygg_data(full_url, username, serverid, ip)
         
         if respdata:
-            print(f"✅ 玩家 {username} 通过途径 {current_id} 验证成功")
-            await save_player_data(respdata, current_id, ip)
+            print(f"✅ 玩家 {username} 通过途径 {current_name} 验证成功")
+            await save_player_data(respdata, current_name, ip)
             data = await final_profile(respdata)
             return data
             
-        print(f"❌ 玩家 {username} 通过途径 {current_id} 验证失败，尝试下一个...")
+        print(f"❌ 玩家 {username} 通过途径 {current_name} 验证失败，尝试下一个...")
         
     print(f"⚠️ 玩家 {username} 无法通过任何已知源验证")
     return False
 
 async def ygg_seesion(uuid):
-    for user_check in settings.user_check:
-        current_id = user_check.get("id")
+    for user_check in settings.servers:
+        current_name = user_check.get("name")
+        current_type = user_check.get("api_type")
+        current_url = user_check.get("root_url")
+        extracted = tldextract.extract(current_url)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
+        protocol = urlparse(current_url).scheme
+        
+        full_url= ""
         
         enabled = user_check.get("enabled", True)
-
         if not enabled :
-            print(f"❌ 途径 {current_id} 已关闭。正在尝试下一个...")
+            print(f"❌ 途径 {current_name} 已关闭。正在尝试下一个...")
             continue
+        if current_type == "mojang":
+            full_url = f"{protocol}://sessionserver.{root_domain}/session/minecraft/profile"
+        elif current_type == "aihmc":
+            full_url = f"{protocol}://api.{root_domain}/mcauth/sessionserver/session/minecraft/profile"
+        elif current_type == "blessingskin":
+            full_url = f"{protocol}://{root_domain}/api/yggdrasil/sessionserver/session/minecraft/profile"
+        elif current_type == "elyby":
+            full_url = f"{protocol}://account.{root_domain}/api/minecraft/session/profile"
+        respdata = await get_ygg_profile(full_url, uuid)
         
         
-        respdata = await get_ygg_profile(user_check.get("profile_url"), uuid)
         if respdata:
             username = respdata.get("name")
-            print(f"✅ 玩家 {username} 通过途径 {current_id} 获取资料成功")
+            print(f"✅ 玩家 {username} 通过途径 {current_name} 获取资料成功")
             data = await final_profile(respdata)
             return data
     return False

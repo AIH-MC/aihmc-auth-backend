@@ -1,6 +1,8 @@
 from libs.config_loader import settings
 from pathlib import Path
 from libs.database import Database
+from urllib.parse import urlparse
+import tldextract
 import httpx
 import json
 import base64
@@ -101,27 +103,29 @@ async def read_skin_data(username):
         return None, None, None, None
     return data.get("username"), data.get("cape_hash"), data.get("skin_hash"), data.get("model_type")
         
-async def request_skin_api(url, username, apitype, api_id):
+async def request_skin_api(protocol, url, username, apitype, api_id):
     skin, cape, model = None, None, "default"
-    
-    processed_name = username.lower()
-    
 
-    if apitype == "official":
-        resp1 = await send_data(f"https://api.mojang.com/users/profiles/minecraft/{processed_name}")
+    if apitype == "mojang":
+        resp1 = await send_data(f"{protocol}://api.{url}/users/profiles/minecraft/{username}")
         if resp1:
             uuid = resp1.get("id")
-            resp2 = await send_data(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}")
+            resp2 = await send_data(f"{protocol}://sessionserver.{url}/session/minecraft/profile/{uuid}")
             if resp2:
                 skin, cape, model = parse_mojang_textures(resp2)
 
-    elif apitype == "csl":
-        resp = await send_data(f"{url}/csl/{processed_name}.json")
+    elif apitype == "aihmc":
+        resp = await send_data(f"{protocol}://skin.{url}/csl/{username}.json")
+        if resp:
+            skin, cape, model = parse_csl_json(resp)
+            
+    elif apitype == "blessingskin" :
+        resp = await send_data(f"{protocol}://{url}/csl/{username}.json")
         if resp:
             skin, cape, model = parse_csl_json(resp)
 
     elif apitype == "elyby":
-        resp = await send_data(f"https://authserver.ely.by/api/users/profiles/minecraft/{processed_name}")
+        resp = await send_data(f"{protocol}://authserver.{url}/api/users/profiles/minecraft/{username}")
         if resp:
             skin, cape, model = parse_mojang_textures(resp)
 
@@ -131,15 +135,20 @@ async def request_skin_api(url, username, apitype, api_id):
     download_tasks = []
     
     if apitype == "official" or apitype == "elyby":
-        if skin: download_tasks.append(cache_texture(f"https://textures.minecraft.net/texture/{skin}", api_id))
-        if cape: download_tasks.append(cache_texture(f"https://textures.minecraft.net/texture/{cape}", api_id))
+        if skin: download_tasks.append(cache_texture(f"{protocol}://textures.minecraft.net/texture/{skin}", api_id))
+        if cape: download_tasks.append(cache_texture(f"{protocol}://textures.minecraft.net/texture/{cape}", api_id))
         if apitype == "elyby":
-            if skin: download_tasks.append(cache_texture(f"http://ely.by/storage/skins/{skin}", api_id))
-            if cape: download_tasks.append(cache_texture(f"http://ely.by/storage/skins/{cape}", api_id))
+            if skin: download_tasks.append(cache_texture(f"{protocol}://{url}/storage/skins/{skin}", api_id))
+            if cape: download_tasks.append(cache_texture(f"{protocol}://{url}/storage/skins/{cape}", api_id))
             
-    elif apitype == "csl":
-        if skin: download_tasks.append(cache_texture(f"{url}/textures/{skin}", api_id))
-        if cape: download_tasks.append(cache_texture(f"{url}/textures/{cape}", api_id))
+    elif apitype == "aihmc":
+        if skin: download_tasks.append(cache_texture(f"{protocol}://skin.{url}/textures/{skin}", api_id))
+        if cape: download_tasks.append(cache_texture(f"{protocol}://skin.{url}/textures/{cape}", api_id))
+        
+    
+    elif apitype == "blessingskin":
+        if skin: download_tasks.append(cache_texture(f"{protocol}://{url}/textures/{skin}", api_id))
+        if cape: download_tasks.append(cache_texture(f"{protocol}://{url}/textures/{cape}", api_id))
 
     if download_tasks:
         await asyncio.gather(*download_tasks)
@@ -164,22 +173,26 @@ async def request_skin_api(url, username, apitype, api_id):
     return csl_data
 
 async def create_csl_data(username):
-    for skin_api in settings.skin_apis:
-        current_id = skin_api.get("id")
-        current_type = skin_api.get("type")
+    for skin_api in settings.servers:
+        current_name = skin_api.get("name")
+        current_type = skin_api.get("api_type")
+        current_url = skin_api.get("root_url")
+        extracted = tldextract.extract(current_url)
+        root_domain = f"{extracted.domain}.{extracted.suffix}"
+        protocol = urlparse(current_url).scheme
         
         enabled = skin_api.get("enabled", True)
         if not enabled:
-            print(f"❌ 玩家 {username} 通过途径 {current_id} 获取皮肤失败，原因：已关闭。正在尝试下一个...")
+            print(f"❌ 玩家 {username} 通过途径 {current_name} 获取皮肤失败，原因：已关闭。正在尝试下一个...")
             continue
         
-        respdata = await request_skin_api(skin_api.get("url"), username, current_type, current_id)
+        respdata = await request_skin_api(protocol, root_domain, username, current_type, current_name)
         
         if respdata:
-            print(f"✅ 玩家 {username} 通过途径 {current_id} 获取皮肤成功")
+            print(f"✅ 玩家 {username} 通过途径 {current_name} 获取皮肤成功")
             return respdata
             
-        print(f"❌ 玩家 {username} 通过途径 {current_id} 获取皮肤失败，尝试下一个...")
+        print(f"❌ 玩家 {username} 通过途径 {current_name} 获取皮肤失败，尝试下一个...")
         
     print(f"⚠️ 玩家 {username} 无法通过任何已知源获取皮肤")
     return False

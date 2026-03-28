@@ -3,62 +3,28 @@ rsakey:
   public_keyfile: "./keys/public.key"
   private_keyfile: "./keys/private.pem"
 
-# 验证服务器设置
-auth_servers:
-  - id: "mojang"
-    url: "https://sessionserver.mojang.com/session/minecraft/hasJoined"
+# 服务器设置
+servers:
+  - name: "Offical"
+    root_url: "https://mojang.com"
+    api_type: "mojang"
     enabled: true
-  - id: "aihmc"
-    url: "https://api.aihmc.top/mcauth/sessionserver/session/minecraft/hasJoined" 
+  - name: "AI-Hobbyist"
+    root_url: "https://api.aihmc.top"
+    api_type: "aihmc"
     enabled: true
-  - id: "littleskin"
-    url: "https://littleskin.cn/api/yggdrasil/sessionserver/session/minecraft/hasJoined" 
-    enabled: true
-  - id: "elyby"
-    url: "https://account.ely.by/api/minecraft/session/hasJoined" 
-    enabled: true
-
-# 玩家名存在性验证
-user_check:
-  - id: "mojang"
-    name: "Offical"
-    url: "https://api.mojang.com/users/profiles/minecraft"
-    profile_url: "https://sessionserver.mojang.com/session/minecraft/profile"
-    enabled: true
-  - id: "aihmc"
-    name: "AIH-MC"
-    url: "https://api.aihmc.top/mcauth/api/users/profiles/minecraft" 
-    profile_url: "https://api.aihmc.top/mcauth/sessionserver/session/minecraft/profile"
-    enabled: true
-  - id: "littleskin"
-    name: "LittleSkin"
-    url: "https://littleskin.cn/api/yggdrasil/api/users/profiles/minecraft"
-    profile_url: "https://littleskin.cn/api/yggdrasil/sessionserver/session/minecraft/profile"
-    enabled: true
-  - id: "elyby"
-    name: "Ely.by"
-    url: "https://authserver.ely.by/api/users/profiles/minecraft"
-    profile_url: "https://account.ely.by/api/minecraft/session/profile"
+  - name: "LittleSkin"
+    root_url: "https://littleskin.cn"
+    api_type: "blessingskin"
+    enabled: true  
+  - name: "Ely.by"
+    root_url: "https://ely.by"
+    api_type: "elyby"
     enabled: true
 
-# 皮肤 API设置
-skin_apis:
-  - id: "mojang"
-    type: "official"
-    url: "https://minecraft.net"
-    enabled: true
-  - id: "aihmc"
-    type: "csl"
-    url: "https://skin.aihmc.top"
-    enabled: true
-  - id: "littleskin"
-    type: "csl"
-    url: "https://littleskin.cn"
-    enabled: true
-  - id: "elyby"
-    type: "elyby"
-    url: "https://ely.by"
-    enabled: true
+extra_skin_domains:
+  - ".minecraft.net"
+  - "minecraft.net"
 
 # 数据库设置
 database:
