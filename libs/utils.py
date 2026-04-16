@@ -3,6 +3,10 @@ from libs.database import Database
 from urllib.parse import urlparse
 import tldextract
 import httpx
+import hashlib
+import uuid
+import re
+import bcrypt
 
 db = Database()
 
@@ -14,25 +18,6 @@ async def send_data(url):
             return False
         else:
             return resp.json()
-
-# Figura 后端验证
-async def reg_figura_uuid(uuid, username):
-    await db.execute("INSERT IGNORE INTO figura (uuid, username) VALUES (%s, %s)", uuid, username)
-    print(f"💾 玩家 {username} Figura 数据注册成功")
-        
-async def validate_figura_data(username):
-    res_list = await db.query("SELECT * FROM figura WHERE username = %s", username)
-    if not res_list:
-        print(f"❌ Figura 验证失败，玩家可能没进过服")
-        return False
-    res = res_list[0]
-    figura_data = {
-        "id": res.get("uuid"),
-        "name": res.get("username"),
-        "properties": []
-    }
-    
-    return figura_data
 
 # 数据迁移
 async def link_server_profile(uuid, new_uuid):
@@ -97,3 +82,68 @@ async def server_player_rstname(uuid):
     user_data = users_list[0]
     await db.execute("UPDATE namelink SET username = %s WHERE uuid = %s", user_data.get("username"), uuid)
     print(f"✅ 玩家 {uuid} 名称已重置")
+    
+# 计算基于玩家名的离线Minecraft玩家uuid
+def generate_offline_uuid(username: str) -> str:
+    """
+    还原 Minecraft Java 版离线 UUID 生成算法
+    算法公式：UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(StandardCharsets.UTF_8))
+    """
+    # 1. 拼接前缀与用户名并编码为 UTF-8
+    content = f"OfflinePlayer:{username}".encode('utf-8')
+    
+    # 2. 计算 MD5 哈希
+    hash_bytes = hashlib.md5(content).digest()
+    
+    # 3. 构造符合 RFC 4122 变体 2, 版本 3 的 UUID
+    # Java 的 nameUUIDFromBytes 会自动处理版本号和变体位
+    # 我们需要手动修改 MD5 结果中的特定位：
+    hash_list = list(hash_bytes)
+    
+    # 设置版本号为 3 (bits 12-15 of time_hi_and_version)
+    hash_list[6] = (hash_list[6] & 0x0f) | 0x30
+    # 设置变体为 IETF (bits 6-7 of clock_seq_hi_and_reserved)
+    hash_list[8] = (hash_list[8] & 0x3f) | 0x80
+    
+    return str(uuid.UUID(bytes=bytes(hash_list)))
+
+# 时间转换
+def parse_duration(duration_str: str) -> int:
+    """
+    将 '7d 10h 50m 20s' 格式的时间字符串转换为总秒数
+    支持部分输入，如 '1d 2h' 或 '30m'
+    """
+    if not duration_str:
+        return 0
+        
+    units = {
+        'd': 86400,
+        'h': 3600,
+        'm': 60,
+        's': 1
+    }
+    # 使用正则匹配数字和单位对
+    matches = re.findall(r'(\d+)([dhms])', duration_str.lower())
+    
+    total_seconds = 0
+    for value, unit in matches:
+        total_seconds += int(value) * units[unit]
+        
+    return total_seconds
+
+
+def hash_password(plain_text_password):
+    salt = bcrypt.gensalt()
+    
+    password_bytes = plain_text_password.encode('utf-8')
+    hashed_password = bcrypt.hashpw(password_bytes, salt)
+    
+    return hashed_password
+
+def check_password(plain_text_password, hashed_password):
+    password_bytes = plain_text_password.encode('utf-8')
+    
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
+        
+    return bcrypt.checkpw(password_bytes, hashed_password)

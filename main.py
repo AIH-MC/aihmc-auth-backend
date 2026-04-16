@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Response, HTTPException, status, Depends
+from fastapi import FastAPI, Response, HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from libs.config_loader import settings
 from libs.auth import ygg_meta, ygg_auth, ygg_seesion
+from libs.figura import figura_auth, figura_reg, figura_refresh
 from libs.skin import create_csl_data
-from libs.utils import reg_figura_uuid, validate_figura_data, link_server_profile, check_player_name, server_player_rename, server_player_rstname
-from libs.model import PostFiguraUUID, LinkProfile, Rename, OfflineReg, OfflineLog, OfflineChpass
+from libs.utils import link_server_profile, check_player_name, server_player_rename, server_player_rstname
+from libs.model import LinkProfile, Rename, OfflineReg, OfflineLog, OfflineChpass, FiguraReg
 from libs.offline_auth import offline_reg, offline_login, offline_check, offline_chpsswd
 from typing import Optional
 from fastapi.responses import FileResponse
@@ -33,6 +34,16 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
             headers={"WWW+Authenticate": "Bearer"},
         )
     return credentials.credentials
+
+async def get_client_ip(request: Request):
+    """
+    全局 IP 获取依赖项
+    """
+    x_forwarded_for = request.headers.get("X-Forwarded-For")
+    if x_forwarded_for:
+        # 如果经过了代理，获取第一个真实 IP
+        return x_forwarded_for.split(",")[0].strip()
+    return request.client.host
 
 @app.get("/")
 def root():
@@ -97,18 +108,34 @@ async def get_texture_file(texture_hash: str):
     )
     
 @app.get("/figura/hasJoined")
-async def figura_auth(username: str):
-    resp = await validate_figura_data(username)
+async def figura_has_joined(
+    username: str,
+    serverId: str,
+    ip: Optional[str] = None
+    ):
+    resp = await figura_auth(username, serverId, ip)
     if not resp:
-        raise HTTPException(
-            status_code=403, 
-            detail={"message": "Figura 验证失败，可能该玩家没有进过服"}
-        )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     return resp
 
 @app.post("/figura/register")
-async def figura_reg(data: PostFiguraUUID, token: str = Depends(verify_token)):
-    await reg_figura_uuid(data.uuid, data.username)
+async def figura_reg_api(data: FiguraReg, token: str = Depends(verify_token), ip: str = Depends(get_client_ip)):
+    resp = await figura_reg(data.username, data.passwd, data.repasswd, ip)
+    if resp.get("code") != 200:
+        raise HTTPException(
+            status_code=resp.get("code"), 
+            detail={"message": resp.get("msg")}
+        )
+    return {"message": "操作成功"}
+
+@app.post("/figura/refresh")
+async def figura_refresh_api(data: OfflineLog, token: str = Depends(verify_token), ip: str = Depends(get_client_ip)):
+    resp = await figura_refresh(data.username, data.passwd, ip)
+    if resp.get("code") != 200:
+        raise HTTPException(
+            status_code=resp.get("code"), 
+            detail={"message": resp.get("msg")}
+        )
     return {"message": "操作成功"}
 
 @app.post("/profile/linkprofile")

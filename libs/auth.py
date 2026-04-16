@@ -94,12 +94,7 @@ async def final_profile(resp_dict, session_uuid=None):
         "properties": props
     }
 
-    
-    
-    
-
 async def get_ygg_data(url, username, serverid, ip):
-    user = username.lower()
     async with httpx.AsyncClient() as client:
         if ip is None:
             resp = await client.get(f"{url}?username={username}&serverId={serverid}")

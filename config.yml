@@ -44,5 +44,8 @@ server:
 # 允许离线登录验证
 allow_offline: true
 
+# Figura会话有效期
+figura_session: 2d
+
 # 访问令牌
 access_token: ""

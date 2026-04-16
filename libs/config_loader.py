@@ -16,6 +16,7 @@ class AppConfig:
         self.server = self._data.get('server', {})
         self.keys = self._data.get('rsakey', {})
         self.allow_offline = self._data.get('allow_offline')
+        self.figura_session = self._data.get('figura_session')
         self.access_token = self._data.get('access_token')
 
 settings = AppConfig()

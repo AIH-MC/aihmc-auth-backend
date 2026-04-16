@@ -19,6 +19,11 @@ class OfflineReg(BaseModel):
     repasswd: str
     ip: Optional[str] = None
     
+class FiguraReg(BaseModel):
+    username: str
+    passwd: str
+    repasswd: str
+    
 class OfflineLog(BaseModel):
     username: str
     passwd: str

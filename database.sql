@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- 主机:                           127.0.0.1
--- 服务器版本:                        10.6.22-MariaDB - mariadb.org binary distribution
+-- 服务器版本:                        10.6.25-MariaDB - MariaDB Server
 -- 服务器操作系统:                      Win64
--- HeidiSQL 版本:                  12.10.0.7000
+-- HeidiSQL 版本:                  12.11.0.7065
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -23,9 +23,12 @@ USE `aihmc_auth`;
 -- 导出  表 aihmc_auth.figura 结构
 DROP TABLE IF EXISTS `figura`;
 CREATE TABLE IF NOT EXISTS `figura` (
-  `uuid` varchar(32) DEFAULT NULL,
   `username` varchar(16) DEFAULT NULL,
-  UNIQUE KEY `uuid` (`uuid`)
+  `uuid` varchar(32) DEFAULT NULL,
+  `password` longtext DEFAULT NULL,
+  `ip` char(50) DEFAULT NULL,
+  `last_time` bigint(20) DEFAULT NULL,
+  UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 正在导出表  aihmc_auth.figura 的数据：~0 rows (大约)
