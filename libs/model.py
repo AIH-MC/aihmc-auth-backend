@@ -1,9 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional
-
-class PostFiguraUUID(BaseModel):
-    uuid: str
-    username: str
     
 class LinkProfile(BaseModel):
     uuid: str
