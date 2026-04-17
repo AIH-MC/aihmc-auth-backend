@@ -105,7 +105,7 @@ def generate_offline_uuid(username: str) -> str:
     # 设置变体为 IETF (bits 6-7 of clock_seq_hi_and_reserved)
     hash_list[8] = (hash_list[8] & 0x3f) | 0x80
     
-    return str(uuid.UUID(bytes=bytes(hash_list)))
+    return str(uuid.UUID(bytes=bytes(hash_list))).hex
 
 # 时间转换
 def parse_duration(duration_str: str) -> int:
