@@ -44,7 +44,7 @@ async def figura_auth(username, serverid, ip):
         
         enabled = auth_api.get("enabled", True)
         if not enabled:
-            print(f"❌ 玩家 {username} 通过途径 {current_name} 验证失败，原因：已关闭。正在尝试下一个...")
+            print(f"❌ 玩家 {username} 通过途径 {current_name} 验证 Figura 失败，原因：已关闭。正在尝试下一个...")
             continue
         if current_type == "mojang":
             full_url = f"{protocol}://sessionserver.{root_domain}/session/minecraft/hasJoined"
@@ -57,12 +57,12 @@ async def figura_auth(username, serverid, ip):
         respdata = await get_ygg_data(full_url, username, serverid, None)
         
         if respdata:
-            print(f"✅ 玩家 {username} 通过途径 {current_name} 验证成功")
+            print(f"✅ 玩家 {username} 通过途径 {current_name} 验证 Figura 成功")
             return respdata
             
-        print(f"❌ 玩家 {username} 通过途径 {current_name} 验证失败，尝试下一个...")
+        print(f"❌ 玩家 {username} 通过途径 {current_name} 验证 Figura 失败，尝试下一个...")
         
-    print(f"⚠️ 玩家 {username} 无法通过任何已知源验证，已回退为离线模式")
+    print(f"⚠️ 玩家 {username} 无法通过任何已知源验证，已回退为 Figura 离线模式")
     session_res = await check_figura_session(username, ip)
     if session_res == "IP_INVALID" or session_res == "SESSION_TIMEDOUT":
         return False
