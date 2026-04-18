@@ -5,7 +5,7 @@ rsakey:
 
 # 服务器设置
 servers:
-  - name: "Offical"
+  - name: "Official"
     root_url: "https://mojang.com"
     api_type: "mojang"
     enabled: true
