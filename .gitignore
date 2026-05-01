@@ -11,3 +11,6 @@ __pycache__/
 # 忽略皮肤缓存
 textures/*
 !textures/.keep
+
+#忽略生产环境配置文件
+config.yml
