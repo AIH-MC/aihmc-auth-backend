@@ -5,6 +5,7 @@ from libs.config_loader import settings
 from libs.auth import ygg_meta, ygg_auth, ygg_seesion
 from libs.figura import figura_auth, figura_reg, figura_refresh
 from libs.skin import create_csl_data
+from libs.head import get_player_head
 from libs.utils import link_server_profile, check_player_name, server_player_rename, server_player_rstname
 from libs.model import LinkProfile, Rename, OfflineReg, OfflineLog, OfflineChpass, FiguraReg
 from libs.offline_auth import offline_reg, offline_login, offline_check, offline_chpsswd
@@ -207,6 +208,16 @@ async def offline_mode_chpasswd(data: OfflineChpass, token: str = Depends(verify
 @app.get("/check_token")
 async def check_token(token: str = Depends(verify_token)):
     return {"message":  "验证通过"}
+
+@app.get("/head/{account}/{size}")
+async def get_head(account: str, size: int):
+    res = await get_player_head(account, size)
+    if not res:
+        raise HTTPException(
+            status_code=404, 
+            detail={"message": "获取头像失败，请检查玩家名或 UUID"}
+        )
+    return Response(content=res, media_type="image/png")
 
 if __name__ == "__main__":
     uvicorn.run(

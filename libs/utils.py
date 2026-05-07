@@ -147,3 +147,22 @@ def check_password(plain_text_password, hashed_password):
         hashed_password = hashed_password.encode('utf-8')
         
     return bcrypt.checkpw(password_bytes, hashed_password)
+
+import re
+
+def identify_identifier(value: str):
+    # 1. 优先判断 UUID
+    # 匹配不带符号的 32 位十六进制: [0-9a-fA-F]{32}
+    # 匹配带符号的格式: [0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
+    # 合并为一个正则：
+    uuid_pattern = r'^([0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$'
+    
+    if re.fullmatch(uuid_pattern, value):
+        return "UUID"
+
+    # 2. 判断用户名：允许中文、字母、数字、下划线
+    # \w 包含 Unicode 字母和下划线，长度限制 1-16
+    if re.fullmatch(r'[\w\u0080-\ud7ff]{1,16}', value):
+        return "USERNAME"
+
+    return "UNKNOWN"
