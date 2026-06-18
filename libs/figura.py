@@ -141,7 +141,11 @@ async def figura_server_sync(uuid, username):
     """
     服务器内插件提交 uuid 和玩家名，由服务端同步到 figura 表。
     如果对应 uuid 不存在则写入，存在则更新 username。
+    自动将有符号 uuid（含横线）转为无符号 uuid。
     """
+    # 去除 uuid 中的横线，统一为无符号格式
+    uuid = uuid.replace("-", "")
+    
     # 先检查该 uuid 是否已存在
     existing = await db.query("SELECT uuid FROM figura WHERE uuid = %s", uuid)
     
