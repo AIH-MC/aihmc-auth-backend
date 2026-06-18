@@ -9,10 +9,11 @@ import string
 
 db = Database()
 
-def generate_random_suffix(length=4):
-    """生成随机后缀，例如 _asdf"""
+def generate_aihmc_forced_name():
+    """生成 AIHMC_随机4位后缀 的强制改名"""
     chars = string.ascii_lowercase + string.digits
-    return "_" + "".join(random.choice(chars) for _ in range(length))
+    suffix = "".join(random.choice(chars) for _ in range(4))
+    return f"AIHMC_{suffix}"
 
 async def save_other_data(uuid, username):
     # 1. 首先确保 UUID 关联表已记录
@@ -22,23 +23,41 @@ async def save_other_data(uuid, username):
     # 注意：前提是你的 namelink 表中 username 字段设置了 UNIQUE 约束
     success = await db.execute("INSERT IGNORE namelink (uuid, username) VALUES (%s, %s)", uuid, username)
     
-    # 3. 如果插入失败（说明重名了），则开始加后缀重试
-    final_name = username
-    while not success:
-        final_name = f"{username}{generate_random_suffix()}"
-        print(f"⚠️ 发现重名，正在尝试新名字: {final_name}")
-        success = await db.execute("INSERT INTO namelink (uuid, username) VALUES (%s, %s)", uuid, final_name)
-    
-    if final_name != username:
-        print(f"💾 玩家 {username} 重名，最终分配名字为: {final_name}")
+    # 3. 如果插入失败（说明重名了），则强制改名为 AIHMC_随机4位后缀
+    if not success:
+        final_name = await force_rename_to_aihmc(uuid, username)
+        print(f"💾 玩家 {username} 与 namelink 重名，最终分配名字为: {final_name}")
     else:
         print(f"💾 玩家 {username} 数据保存成功")
+
+async def force_rename_to_aihmc(uuid, original_username):
+    """强制改名为 AIHMC_随机4位后缀，并写入 namelink"""
+    while True:
+        forced_name = generate_aihmc_forced_name()
+        success = await db.execute("INSERT INTO namelink (uuid, username) VALUES (%s, %s)", uuid, forced_name)
+        if success:
+            print(f"⚠️ 玩家 {original_username} 与离线账户重名，强制改名为: {forced_name}")
+            return forced_name
 
 async def save_player_data(resp_dict, source_id, ip):
     uuid = resp_dict.get("id")
     name = resp_dict.get("name")
     
-    await save_other_data(uuid, name)
+    # 1. 先检查该名字在离线登录是否已存在
+    offline_exists = await db.query("SELECT username FROM offline WHERE username = %s", name)
+    
+    if offline_exists:
+        # 如果离线已存在，直接强制改名为 AIHMC_随机4位后缀
+        final_name = await force_rename_to_aihmc(uuid, name)
+    else:
+        # 如果离线不存在，走原来的 namelink 逻辑
+        await save_other_data(uuid, name)
+        # 从 namelink 查出最终分配的名字（可能已被 save_other_data 加后缀改名）
+        link_data = await db.query("SELECT username FROM namelink WHERE uuid = %s", uuid)
+        final_name = link_data[0]["username"] if link_data else name
+    
+    # 用 final_name 更新后续逻辑中的 name 变量
+    name = final_name
     
     textures_data = next((p for p in resp_dict.get("properties", []) if p['name'] == 'textures'), None)
     

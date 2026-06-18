@@ -63,6 +63,20 @@ async def figura_auth(username, serverid, ip):
         print(f"❌ 玩家 {username} 通过途径 {current_name} 验证 Figura 失败，尝试下一个...")
         
     print(f"⚠️ 玩家 {username} 无法通过任何已知源验证，已回退为 Figura 离线模式")
+    
+    # 检查 figura 表中是否有该玩家的记录（包括服务端同步的记录）
+    figura_record = await db.query("SELECT uuid, username FROM figura WHERE username = %s", username)
+    if figura_record:
+        record_uuid = figura_record[0].get("uuid")
+        print(f"✅ 玩家 {username} 在 figura 表中存在记录（UUID: {record_uuid}），直接通过验证")
+        offline_mode = {
+            "id": record_uuid,
+            "name": username,
+            "properties": []
+        }
+        return offline_mode
+    
+    # 检查 figura 会话（仅对通过 /figura/register 注册的用户有效）
     session_res = await check_figura_session(username, ip)
     if session_res == "IP_INVALID" or session_res == "SESSION_TIMEDOUT":
         return False
@@ -122,3 +136,26 @@ async def figura_refresh(username, passwd, ip):
         "msg": msg
     }
     return rtn
+
+async def figura_server_sync(uuid, username):
+    """
+    服务器内插件提交 uuid 和玩家名，由服务端同步到 figura 表。
+    如果对应 uuid 不存在则写入，存在则更新 username。
+    """
+    # 先检查该 uuid 是否已存在
+    existing = await db.query("SELECT uuid FROM figura WHERE uuid = %s", uuid)
+    
+    if existing:
+        # 存在则更新 username
+        await db.execute("UPDATE figura SET username = %s WHERE uuid = %s", username, uuid)
+        print(f"💾 Figura 服务端同步：已更新 UUID {uuid} 的用户名为 {username}")
+        return {"code": 200, "msg": "更新成功"}
+    else:
+        # 不存在则写入
+        timestamp = int(time.time())
+        await db.execute(
+            "INSERT INTO figura (uuid, username, ip, last_time) VALUES (%s, %s, %s, %s)",
+            uuid, username, "server", timestamp
+        )
+        print(f"💾 Figura 服务端同步：已写入 UUID {uuid} 的用户名 {username}")
+        return {"code": 200, "msg": "写入成功"}

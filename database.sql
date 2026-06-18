@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- 主机:                           127.0.0.1
--- 服务器版本:                        10.6.25-MariaDB - MariaDB Server
+-- 服务器版本:                        10.6.22-MariaDB - mariadb.org binary distribution
 -- 服务器操作系统:                      Win64
--- HeidiSQL 版本:                  12.11.0.7065
+-- HeidiSQL 版本:                  12.10.0.7000
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -31,8 +31,17 @@ CREATE TABLE IF NOT EXISTS `figura` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.figura 的数据：~0 rows (大约)
-DELETE FROM `figura`;
+-- 数据导出被取消选择。
+
+-- 导出  表 aihmc_auth.figura_server 结构
+DROP TABLE IF EXISTS `figura_server`;
+CREATE TABLE IF NOT EXISTS `figura_server` (
+  `uuid` varchar(32) DEFAULT NULL,
+  `username` varchar(32) DEFAULT NULL,
+  UNIQUE KEY `uuid` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 数据导出被取消选择。
 
 -- 导出  表 aihmc_auth.namelink 结构
 DROP TABLE IF EXISTS `namelink`;
@@ -43,8 +52,7 @@ CREATE TABLE IF NOT EXISTS `namelink` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.namelink 的数据：~0 rows (大约)
-DELETE FROM `namelink`;
+-- 数据导出被取消选择。
 
 -- 导出  表 aihmc_auth.offline 结构
 DROP TABLE IF EXISTS `offline`;
@@ -56,8 +64,7 @@ CREATE TABLE IF NOT EXISTS `offline` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.offline 的数据：~0 rows (大约)
-DELETE FROM `offline`;
+-- 数据导出被取消选择。
 
 -- 导出  表 aihmc_auth.skins 结构
 DROP TABLE IF EXISTS `skins`;
@@ -69,8 +76,7 @@ CREATE TABLE IF NOT EXISTS `skins` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.skins 的数据：~0 rows (大约)
-DELETE FROM `skins`;
+-- 数据导出被取消选择。
 
 -- 导出  表 aihmc_auth.userlink 结构
 DROP TABLE IF EXISTS `userlink`;
@@ -80,8 +86,7 @@ CREATE TABLE IF NOT EXISTS `userlink` (
   UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.userlink 的数据：~0 rows (大约)
-DELETE FROM `userlink`;
+-- 数据导出被取消选择。
 
 -- 导出  表 aihmc_auth.users 结构
 DROP TABLE IF EXISTS `users`;
@@ -95,8 +100,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 正在导出表  aihmc_auth.users 的数据：~0 rows (大约)
-DELETE FROM `users`;
+-- 数据导出被取消选择。
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

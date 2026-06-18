@@ -3,11 +3,11 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from libs.config_loader import settings
 from libs.auth import ygg_meta, ygg_auth, ygg_seesion
-from libs.figura import figura_auth, figura_reg, figura_refresh
+from libs.figura import figura_auth, figura_reg, figura_refresh, figura_server_sync
 from libs.skin import create_csl_data
 from libs.head import get_player_head
 from libs.utils import link_server_profile, check_player_name, server_player_rename, server_player_rstname
-from libs.model import LinkProfile, Rename, OfflineReg, OfflineLog, OfflineChpass, FiguraReg
+from libs.model import LinkProfile, Rename, OfflineReg, OfflineLog, OfflineChpass, FiguraReg, FiguraServerSync
 from libs.offline_auth import offline_reg, offline_login, offline_check, offline_chpsswd
 from typing import Optional
 from fastapi.responses import FileResponse
@@ -138,6 +138,16 @@ async def figura_refresh_api(data: OfflineLog, token: str = Depends(verify_token
             detail={"message": resp.get("msg")}
         )
     return {"message": "操作成功"}
+
+@app.post("/figura/server")
+async def figura_server_sync_api(data: FiguraServerSync, token: str = Depends(verify_token)):
+    resp = await figura_server_sync(data.uuid, data.username)
+    if resp.get("code") != 200:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": resp.get("msg")}
+        )
+    return {"message": resp.get("msg")}
 
 @app.post("/profile/linkprofile")
 async def link_profile(data: LinkProfile, token: str = Depends(verify_token)):

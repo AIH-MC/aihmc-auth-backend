@@ -28,3 +28,7 @@ class OfflineChpass(BaseModel):
     username: str
     passwd: str
     newpasswd: str
+
+class FiguraServerSync(BaseModel):
+    uuid: str
+    username: str
