@@ -34,7 +34,8 @@ async def force_rename_to_aihmc(uuid, original_username):
     """强制改名为 AIHMC_随机4位后缀，并写入 namelink"""
     while True:
         forced_name = generate_aihmc_forced_name()
-        success = await db.execute("INSERT INTO namelink (uuid, username) VALUES (%s, %s)", uuid, forced_name)
+        # 尝试插入，如果 uuid 已存在则更新 username
+        success = await db.execute("INSERT INTO namelink (uuid, username) VALUES (%s, %s) ON DUPLICATE KEY UPDATE username = %s", uuid, forced_name, forced_name)
         if success:
             print(f"⚠️ 玩家 {original_username} 与离线账户重名，强制改名为: {forced_name}")
             return forced_name
